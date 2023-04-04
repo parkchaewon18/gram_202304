@@ -1,7 +1,7 @@
 package com.ll.gram.boundedContext.member.controller;
 
-
-import com.ll.gram.boundedContext.member.controller.MemberController;
+import com.ll.gram.boundedContext.member.entity.Member;
+import com.ll.gram.boundedContext.member.service.MemberService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,13 +20,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Transactional
-@ActiveProfiles("test")
+@SpringBootTest // 스프링부트 관련 컴포넌트 테스트할 때 붙여야 함, Ioc 컨테이너 작동시킴
+@AutoConfigureMockMvc // http 요청, 응답 테스트
+@Transactional // 실제로 테스트에서 발생한 DB 작업이 영구적으로 적용되지 않도록, test + 트랜잭션 => 자동롤백
+@ActiveProfiles("test") // application-test.yml 을 활성화 시킨다.
 public class MemberControllerTests {
     @Autowired
     private MockMvc mvc;
+    @Autowired
+    private MemberService memberService;
 
     @Test
     @DisplayName("회원가입 폼")
@@ -33,7 +36,7 @@ public class MemberControllerTests {
         // WHEN
         ResultActions resultActions = mvc
                 .perform(get("/member/join"))
-                .andDo(print());
+                .andDo(print()); // 크게 의미 없고, 그냥 확인용
 
         // THEN
         resultActions
@@ -52,6 +55,7 @@ public class MemberControllerTests {
     }
 
     @Test
+    // @Rollback(value = false) // DB에 흔적이 남는다.
     @DisplayName("회원가입")
     void t002() throws Exception {
         // WHEN
@@ -68,6 +72,10 @@ public class MemberControllerTests {
                 .andExpect(handler().handlerType(MemberController.class))
                 .andExpect(handler().methodName("join"))
                 .andExpect(status().is3xxRedirection());
+
+        Member member = memberService.findByUsername("user10").orElse(null);
+
+        assertThat(member).isNotNull();
     }
 
     @Test
