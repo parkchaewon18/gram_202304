@@ -50,4 +50,9 @@ public class MemberController {
         return "usr/member/login";
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/me")
+    public String showMe() {
+        return "usr/member/me";
+    }
 }
